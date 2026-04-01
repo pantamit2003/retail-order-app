@@ -17,7 +17,7 @@ st.subheader(f"📅 Date: {today}")
 # -----------------------------
 stock_url = "https://docs.google.com/spreadsheets/d/1c_B12xm6U9k9InwSNmu7_dwFRhiXe-r2wRCgbZd2hLA/export?format=csv"
 
-@st.cache_data
+@st.cache_data(ttl=60)
 def load_stock():
     df = pd.read_csv(stock_url)
     df.columns = df.columns.str.strip().str.upper()
