@@ -67,6 +67,13 @@ if "cart" not in st.session_state:
 # -----------------------------
 # INPUT SECTION
 # -----------------------------
+
+if "qty" not in st.session_state:
+    st.session_state.qty = 1
+
+if "last_sku" not in st.session_state:
+    st.session_state.last_sku = None
+
 st.subheader("➕ Add Item")
 
 col1, col2 = st.columns(2)
