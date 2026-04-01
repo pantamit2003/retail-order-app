@@ -3,6 +3,7 @@ import pandas as pd
 from datetime import datetime
 import requests
 import threading
+import pytz    
 
 st.title("📦 Retail Order Management")
 
@@ -71,10 +72,29 @@ st.subheader("➕ Add Item")
 col1, col2 = st.columns(2)
 
 with col1:
-    sku = st.selectbox("Select SKU", df["SKU"])
+    sku = st.selectbox("Select SKU", df["SKU"], key="sku")
+        if st.session_state.last_sku != sku:
+        st.session_state.qty = 1
+        st.session_state.last_sku = sku
+
+selected_stock = df[df["SKU"] == sku]["STOCK"].values
+
+
+if len(selected_stock) > 0:
+    available_stock = int(selected_stock[0])
+else:
+    available_stock = 0
+
+# SHOW STOCK
+st.info(f"📦 Available Stock: {available_stock}")
 
 with col2:
-    qty = st.number_input("Quantity", min_value=1, step=1)
+    qty = st.number_input(
+        "Quantity",
+        min_value=1,
+        step=1,
+        key="qty"
+    )
 
 # -----------------------------
 # ADD TO CART
@@ -146,7 +166,7 @@ if st.button("✅ Submit Order"):
 
         for item in st.session_state.cart:
             payload.append({
-                "date": today,
+                "date": date_time,
                 "user": user_name,
                 "party": party,
                 "sku": str(item["SKU"]),
