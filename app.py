@@ -28,7 +28,7 @@ df = load_stock()
 # -----------------------------
 # GOOGLE SHEET (PARTY)
 # -----------------------------
-@st.cache_data
+@st.cache_data(ttl=60)
 def load_parties():
     party_url = "https://docs.google.com/spreadsheets/d/1c_B12xm6U9k9InwSNmu7_dwFRhiXe-r2wRCgbZd2hLA/export?format=csv&gid=1688755592"
     party_df = pd.read_csv(party_url)
