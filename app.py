@@ -10,6 +10,10 @@ st.title("📦 Retail Order Management")
 # -----------------------------
 # DATE
 # -----------------------------
+
+ist = pytz.timezone("Asia/Kolkata")
+now_ist = datetime.now(ist)
+
 today = datetime.now().strftime("%d-%m-%Y")
 st.subheader(f"📅 Date: {today}")
 
