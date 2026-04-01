@@ -13,6 +13,7 @@ st.title("📦 Retail Order Management")
 today = datetime.now().strftime("%d-%m-%Y")
 st.subheader(f"📅 Date: {today}")
 
+date_time = now_ist.strftime("%d-%m-%Y %H:%M:%S")
 # -----------------------------
 # GOOGLE SHEET (STOCK)
 # -----------------------------
