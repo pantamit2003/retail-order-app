@@ -74,8 +74,8 @@ col1, col2 = st.columns(2)
 with col1:
     sku = st.selectbox("Select SKU", df["SKU"], key="sku")
         if st.session_state.last_sku != sku:
-        st.session_state.qty = 1
-        st.session_state.last_sku = sku
+            st.session_state.qty = 1
+            st.session_state.last_sku = sku
 
 selected_stock = df[df["SKU"] == sku]["STOCK"].values
 
