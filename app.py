@@ -100,7 +100,7 @@ else:
     available_stock = 0
 
 # SHOW STOCK
-st.info(f"📦 Available Stock: {available_stock}")
+#st.info(f"📦 Available Stock: {available_stock}")
 
 with col2:
     qty = st.number_input(
