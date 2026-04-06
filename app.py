@@ -84,7 +84,8 @@ st.subheader("➕ Add Item")
 col1, col2 = st.columns(2)
 
 with col1:
-    sku = st.selectbox("Select SKU", df["SKU"], key="sku")
+    sku_list = ["-- Select SKU --"] + df["SKU"].tolist()
+    sku = st.selectbox("Select SKU", sku_list, key="sku")
 
     if st.session_state.last_sku != sku:
         st.session_state.qty = 1
