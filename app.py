@@ -133,14 +133,48 @@ if st.button("➕ Add to Cart"):
 # -----------------------------
 # CART DISPLAY
 # -----------------------------
+st.markdown("""
+<style>
+div[data-testid="stHorizontalBlock"] {
+    margin-bottom: -12px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 st.subheader("🧾 Your Order")
 
 if st.session_state.cart:
-    cart_df = pd.DataFrame(st.session_state.cart)
-    st.dataframe(cart_df, use_container_width=True)
 
-    total_qty = cart_df["QTY"].sum()
+    # Header
+    col1, col2, col3 = st.columns([6, 2, 1])
+    col1.markdown("**SKU**")
+    col2.markdown("**QTY**")
+    col3.markdown("")
+
+    st.markdown("---")
+
+    # Rows
+    for i, item in enumerate(st.session_state.cart):
+
+        col1, col2, col3 = st.columns([6, 2, 1])
+
+        with col1:
+            st.markdown(item["SKU"])   # 👈 write → markdown (better spacing)
+
+        with col2:
+            st.markdown(f"**{item['QTY']}**")
+
+        with col3:
+            if st.button("❌", key=f"remove_{i}"):
+                st.session_state.cart.pop(i)
+                st.rerun()
+
+    st.markdown("---")
+
+    total_qty = sum([item["QTY"] for item in st.session_state.cart])
     st.info(f"Total Quantity: {total_qty}")
+
 else:
     st.warning("Abhi koi item add nahi hua ❌")
 
@@ -149,7 +183,7 @@ else:
 # -----------------------------
 if st.button("🗑 Clear Cart"):
     st.session_state.cart = []
-    st.success("Cart cleared ✅")
+    st.rerun()
 
 # -----------------------------
 # BACKGROUND FUNCTION (FAST)
