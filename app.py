@@ -133,44 +133,25 @@ if st.button("➕ Add to Cart"):
 # -----------------------------
 # CART DISPLAY
 # -----------------------------
-st.markdown("""
-<style>
-div[data-testid="stHorizontalBlock"] {
-    margin-bottom: -12px;
-}
-</style>
-""", unsafe_allow_html=True)
 
 
 st.subheader("🧾 Your Order")
 
 if st.session_state.cart:
 
-    # Header
-    col1, col2, col3 = st.columns([6, 2, 1])
-    col1.markdown("**SKU**")
-    col2.markdown("**QTY**")
-    col3.markdown("")
-
-    st.markdown("---")
-
-    # Rows
     for i, item in enumerate(st.session_state.cart):
 
-        col1, col2, col3 = st.columns([6, 2, 1])
+        # 📱 Mobile friendly card layout
+        st.markdown(f"""
+        <div style="border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:8px;">
+            <div><b>SKU:</b> {item['SKU']}</div>
+            <div><b>QTY:</b> {item['QTY']}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
-        with col1:
-            st.markdown(item["SKU"])   # 👈 write → markdown (better spacing)
-
-        with col2:
-            st.markdown(f"**{item['QTY']}**")
-
-        with col3:
-            if st.button("❌", key=f"remove_{i}"):
-                st.session_state.cart.pop(i)
-                st.rerun()
-
-    st.markdown("---")
+        if st.button("❌ Remove", key=f"remove_{i}"):
+            st.session_state.cart.pop(i)
+            st.rerun()
 
     total_qty = sum([item["QTY"] for item in st.session_state.cart])
     st.info(f"Total Quantity: {total_qty}")
