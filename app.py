@@ -91,13 +91,13 @@ with col1:
         st.session_state.qty = 1
         st.session_state.last_sku = sku
 
-selected_stock = df[df["SKU"] == sku]["STOCK"].values
+#selected_stock = df[df["SKU"] == sku]["STOCK"].values
 
 
-if len(selected_stock) > 0:
-    available_stock = int(selected_stock[0])
-else:
-    available_stock = 0
+#if len(selected_stock) > 0:
+    #available_stock = int(selected_stock[0])
+#else:
+    #available_stock = 0
 
 # SHOW STOCK
 #st.info(f"📦 Available Stock: {available_stock}")
