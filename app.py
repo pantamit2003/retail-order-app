@@ -54,7 +54,7 @@ user_name = st.text_input("👤 Your Name")
 party_list = party_df.iloc[:, 0].dropna().unique().tolist()
 
 party_option = st.selectbox("🏪 Select Party", ["-- Select --"] + party_list)
-#new_party = st.text_input("➕ Or Enter New Party")
+new_party = st.text_input("➕ Or Enter New Party")
 
 if party_option != "-- Select --":
     party = party_option
