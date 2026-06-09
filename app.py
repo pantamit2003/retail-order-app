@@ -50,14 +50,30 @@ if "cart" not in st.session_state:
 if "last_sku" not in st.session_state:
     st.session_state.last_sku = None
 
-# form_version acts as a "reset key" — incrementing it changes every
-# widget's key, so Streamlit treats them as brand-new widgets and
-# renders them at their default values without touching session_state
-# for already-instantiated widgets (which would raise the APIException).
 if "form_version" not in st.session_state:
     st.session_state.form_version = 0
 
-v = st.session_state.form_version   # shorthand used in widget keys
+# FIX: "submitted" flag lets us show balloons + toast AFTER the rerun,
+# on the already-fresh form, instead of before it.
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
+
+if "submitted_by" not in st.session_state:
+    st.session_state.submitted_by = ""
+
+# FIX: Read form_version into `v` ONCE here — it is now the correct,
+# already-incremented value because the rerun has already happened.
+v = st.session_state.form_version
+
+# -----------------------------
+# Show post-submit feedback on the fresh form
+# -----------------------------
+if st.session_state.submitted:
+    st.balloons()
+    st.success("Order Submitted Successfully 🚀")
+    st.toast(f"Order placed by {st.session_state.submitted_by} ⚡")
+    st.session_state.submitted = False      # reset flag so it shows only once
+    st.session_state.submitted_by = ""
 
 # -----------------------------
 # USER NAME INPUT
@@ -73,7 +89,6 @@ party_option = st.selectbox(
     ["-- Select --"] + party_list,
     key=f"party_{v}"
 )
-
 party = party_option if party_option != "-- Select --" else None
 
 # -----------------------------
@@ -86,7 +101,6 @@ with col1:
     sku_list = ["-- Select SKU --"] + df["SKU"].tolist()
     sku = st.selectbox("Select SKU", sku_list, key=f"sku_{v}")
 
-    # Reset qty whenever SKU changes
     if st.session_state.last_sku != sku:
         st.session_state[f"qty_{v}"] = 1
         st.session_state.last_sku = sku
@@ -103,7 +117,6 @@ with col2:
 # ADD TO CART
 # -----------------------------
 if st.button("➕ Add to Cart"):
-    # Validation: block placeholder SKU
     if sku == "-- Select SKU --":
         st.warning("Pehle ek valid SKU select karo ❌")
     else:
@@ -167,7 +180,6 @@ if st.button("✅ Submit Order"):
     elif not st.session_state.cart:
         st.warning("Cart khali hai ❌")
     else:
-        # Validation: block invalid SKUs in cart
         invalid_skus = [
             item["SKU"] for item in st.session_state.cart
             if item["SKU"] == "-- Select SKU --"
@@ -175,7 +187,6 @@ if st.button("✅ Submit Order"):
         if invalid_skus:
             st.warning("Cart mein invalid SKU hai. Pehle remove karo ❌")
         else:
-            # Build payload (same structure as before)
             payload = []
             for item in st.session_state.cart:
                 payload.append({
@@ -189,18 +200,16 @@ if st.button("✅ Submit Order"):
             # 🔥 Background submit
             threading.Thread(target=send_data, args=(payload,)).start()
 
-            # Clear cart
+            # Clear cart & tracking state
             st.session_state.cart = []
-
-            # Reset last_sku tracker so qty resets correctly after form refresh
             st.session_state.last_sku = None
 
-            # Increment form_version → all widget keys change → full form reset
+            # FIX: Set flag + increment version BEFORE rerun.
+            # On the next run, v will equal the new form_version,
+            # so all widget keys are fresh and render at defaults.
+            st.session_state.submitted = True
+            st.session_state.submitted_by = user_name
             st.session_state.form_version += 1
 
-            # Celebrate 🎈
-            st.balloons()
-            st.success(f"Order Submitted Successfully 🚀")
-            st.toast(f"Order placed by {user_name} ⚡")
-
-            #st.rerun()
+            # FIX: rerun so the new form_version takes effect immediately.
+            st.rerun()
