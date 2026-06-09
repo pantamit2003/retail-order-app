@@ -46,27 +46,14 @@ party_df = load_parties()
 # -----------------------------
 # USER NAME INPUT
 # -----------------------------
-if "user_name" not in st.session_state:
-    st.session_state.user_name = ""
-
-user_name = st.text_input(
-    "👤 Your Name",
-    key="user_name"
-)
+user_name = st.text_input("👤 Your Name")
 
 # -----------------------------
 # PARTY INPUT (Dropdown + Manual)
 # -----------------------------
 party_list = party_df.iloc[:, 0].dropna().unique().tolist()
 
-if "party_option" not in st.session_state:
-    st.session_state.party_option = "-- Select --"
-
-party_option = st.selectbox(
-    "🏪 Select Party",
-    ["-- Select --"] + party_list,
-    key="party_option"
-)
+party_option = st.selectbox("🏪 Select Party", ["-- Select --"] + party_list)
 #new_party = st.text_input("➕ Or Enter New Party")
 
 if party_option != "-- Select --":
@@ -218,15 +205,7 @@ if st.button("✅ Submit Order"):
         # 🔥 FAST BACKGROUND SUBMIT
         threading.Thread(target=send_data, args=(payload,)).start()
 
-        # Reset form
         st.session_state.cart = []
-        st.session_state.user_name = ""
-        st.session_state.party_option = "-- Select --"
-        st.session_state.sku = "-- Select SKU --"
-        st.session_state.qty = 1
-        st.session_state.last_sku = None
-        
-        # Celebration
-        st.balloons()
+
         st.success("Order Submitted 🚀")
         st.toast(f"Order placed by {user_name} ⚡")
