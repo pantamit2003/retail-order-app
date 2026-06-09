@@ -203,4 +203,4 @@ if st.button("✅ Submit Order"):
             st.success(f"Order Submitted Successfully 🚀")
             st.toast(f"Order placed by {user_name} ⚡")
 
-            st.rerun()
+            #st.rerun()
