@@ -3,21 +3,19 @@ import pandas as pd
 from datetime import datetime
 import requests
 import threading
-import pytz    
+import pytz
 
 st.title("📦 Retail Order Management")
 
 # -----------------------------
 # DATE
 # -----------------------------
-
 ist = pytz.timezone("Asia/Kolkata")
 now_ist = datetime.now(ist)
-
 today = datetime.now().strftime("%d-%m-%Y")
 st.subheader(f"📅 Date: {today}")
-
 date_time = now_ist.strftime("%d-%m-%Y %H:%M:%S")
+
 # -----------------------------
 # GOOGLE SHEET (STOCK)
 # -----------------------------
@@ -44,118 +42,100 @@ def load_parties():
 party_df = load_parties()
 
 # -----------------------------
-# USER NAME INPUT
-# -----------------------------
-user_name = st.text_input("👤 Your Name")
-
-# -----------------------------
-# PARTY INPUT (Dropdown + Manual)
-# -----------------------------
-party_list = party_df.iloc[:, 0].dropna().unique().tolist()
-
-party_option = st.selectbox("🏪 Select Party", ["-- Select --"] + party_list)
-#new_party = st.text_input("➕ Or Enter New Party")
-
-if party_option != "-- Select --":
-    party = party_option
-#elif new_party:
-    #party = new_party
-else:
-    party = None
-
-# -----------------------------
-# SESSION STATE (CART)
+# SESSION STATE INITIALISATION
 # -----------------------------
 if "cart" not in st.session_state:
     st.session_state.cart = []
 
-# -----------------------------
-# INPUT SECTION
-# -----------------------------
-
-if "qty" not in st.session_state:
-    st.session_state.qty = 1
-
 if "last_sku" not in st.session_state:
     st.session_state.last_sku = None
 
-st.subheader("➕ Add Item")
+# form_version acts as a "reset key" — incrementing it changes every
+# widget's key, so Streamlit treats them as brand-new widgets and
+# renders them at their default values without touching session_state
+# for already-instantiated widgets (which would raise the APIException).
+if "form_version" not in st.session_state:
+    st.session_state.form_version = 0
 
+v = st.session_state.form_version   # shorthand used in widget keys
+
+# -----------------------------
+# USER NAME INPUT
+# -----------------------------
+user_name = st.text_input("👤 Your Name", key=f"user_name_{v}")
+
+# -----------------------------
+# PARTY INPUT (Dropdown)
+# -----------------------------
+party_list = party_df.iloc[:, 0].dropna().unique().tolist()
+party_option = st.selectbox(
+    "🏪 Select Party",
+    ["-- Select --"] + party_list,
+    key=f"party_{v}"
+)
+
+party = party_option if party_option != "-- Select --" else None
+
+# -----------------------------
+# INPUT SECTION
+# -----------------------------
+st.subheader("➕ Add Item")
 col1, col2 = st.columns(2)
 
 with col1:
     sku_list = ["-- Select SKU --"] + df["SKU"].tolist()
-    sku = st.selectbox("Select SKU", sku_list, key="sku")
+    sku = st.selectbox("Select SKU", sku_list, key=f"sku_{v}")
 
+    # Reset qty whenever SKU changes
     if st.session_state.last_sku != sku:
-        st.session_state.qty = 1
+        st.session_state[f"qty_{v}"] = 1
         st.session_state.last_sku = sku
-
-#selected_stock = df[df["SKU"] == sku]["STOCK"].values
-
-
-#if len(selected_stock) > 0:
-    #available_stock = int(selected_stock[0])
-#else:
-    #available_stock = 0
-
-# SHOW STOCK
-#st.info(f"📦 Available Stock: {available_stock}")
 
 with col2:
     qty = st.number_input(
         "Quantity",
         min_value=1,
         step=1,
-        key="qty"
+        key=f"qty_{v}"
     )
 
 # -----------------------------
 # ADD TO CART
 # -----------------------------
 if st.button("➕ Add to Cart"):
-    found = False
-
-    for item in st.session_state.cart:
-        if item["SKU"] == sku:
-            item["QTY"] += qty
-            found = True
-            break
-
-    if not found:
-        st.session_state.cart.append({
-            "SKU": sku,
-            "QTY": qty
-        })
-
-    st.success("Item Added ✅")
+    # Validation: block placeholder SKU
+    if sku == "-- Select SKU --":
+        st.warning("Pehle ek valid SKU select karo ❌")
+    else:
+        found = False
+        for item in st.session_state.cart:
+            if item["SKU"] == sku:
+                item["QTY"] += qty
+                found = True
+                break
+        if not found:
+            st.session_state.cart.append({"SKU": sku, "QTY": qty})
+        st.success("Item Added ✅")
 
 # -----------------------------
 # CART DISPLAY
 # -----------------------------
-
-
 st.subheader("🧾 Your Order")
 
 if st.session_state.cart:
-
     for i, item in enumerate(st.session_state.cart):
-
-        # 📱 Mobile friendly card layout
         st.markdown(f"""
         <div style="border:1px solid #ddd; padding:10px; border-radius:8px; margin-bottom:8px;">
             <div><b>SKU:</b> {item['SKU']}</div>
             <div><b>QTY:</b> {item['QTY']}</div>
         </div>
         """, unsafe_allow_html=True)
-
-        if st.button("❌ Remove", key=f"remove_{i}"):
+        if st.button("❌ Remove", key=f"remove_{i}_{v}"):
             st.session_state.cart.pop(i)
             st.rerun()
 
     total_qty = sum([item["QTY"] for item in st.session_state.cart])
     st.info(f"Total Quantity: {total_qty}")
-
 else:
     st.warning("Abhi koi item add nahi hua ❌")
 
@@ -177,35 +157,50 @@ def send_data(payload):
         pass
 
 # -----------------------------
-# SUBMIT ORDER (FAST 🚀)
+# SUBMIT ORDER 🚀
 # -----------------------------
 if st.button("✅ Submit Order"):
-
     if not user_name:
         st.warning("Apna naam daalo ❌")
-
     elif not party:
-        st.warning("Party select ya enter karo ❌")
-
+        st.warning("Party select karo ❌")
     elif not st.session_state.cart:
         st.warning("Cart khali hai ❌")
-
     else:
-        payload = []
+        # Validation: block invalid SKUs in cart
+        invalid_skus = [
+            item["SKU"] for item in st.session_state.cart
+            if item["SKU"] == "-- Select SKU --"
+        ]
+        if invalid_skus:
+            st.warning("Cart mein invalid SKU hai. Pehle remove karo ❌")
+        else:
+            # Build payload (same structure as before)
+            payload = []
+            for item in st.session_state.cart:
+                payload.append({
+                    "date": date_time,
+                    "user": user_name,
+                    "party": party,
+                    "sku": str(item["SKU"]),
+                    "qty": int(item["QTY"])
+                })
 
-        for item in st.session_state.cart:
-            payload.append({
-                "date": date_time,
-                "user": user_name,
-                "party": party,
-                "sku": str(item["SKU"]),
-                "qty": int(item["QTY"])
-            })
+            # 🔥 Background submit
+            threading.Thread(target=send_data, args=(payload,)).start()
 
-        # 🔥 FAST BACKGROUND SUBMIT
-        threading.Thread(target=send_data, args=(payload,)).start()
+            # Clear cart
+            st.session_state.cart = []
 
-        st.session_state.cart = []
+            # Reset last_sku tracker so qty resets correctly after form refresh
+            st.session_state.last_sku = None
 
-        st.success("Order Submitted 🚀")
-        st.toast(f"Order placed by {user_name} ⚡")
+            # Increment form_version → all widget keys change → full form reset
+            st.session_state.form_version += 1
+
+            # Celebrate 🎈
+            st.balloons()
+            st.success(f"Order Submitted Successfully 🚀")
+            st.toast(f"Order placed by {user_name} ⚡")
+
+            st.rerun()
